@@ -7,7 +7,7 @@ class MainWindow(QMainWindow):
         self.login_window = LoginWindow()
         self.setCentralWidget(self.login_window)
 
-if __name__ == "__main__":
+if __name__ == "__main__": # C'est le main github
     app = QApplication([])
     #with open('stylesheet.qss', 'r') as file:
         #app.setStyleSheet(file.read())
