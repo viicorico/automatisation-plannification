@@ -353,7 +353,6 @@ session_effectifs = calculer_effectif_par_session(meilleure_solution, filiere_ef
 for session, effectif in session_effectifs.items():
     assert effectif <= nb_places_par_session, f"La session {session} dépasse le nombre de places autorisées."
 
-dessiner_graphe(graphe, meilleure_solution)
 
 print("Variance de la solution :", variance)
 
