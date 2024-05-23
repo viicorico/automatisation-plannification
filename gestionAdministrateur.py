@@ -1,8 +1,5 @@
 import pandas as pd
 
-
-
-
 def lire_donnees_Admin(fichier_csv):
 # Spécifiez le chemin vers votre fichier CSV
     fichier_csv = pd.read_csv('Administrateur.csv', header=None)
