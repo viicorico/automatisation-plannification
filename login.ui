@@ -117,7 +117,7 @@ QMessageBox QLabel {
    <item>
     <widget class="QLineEdit" name="numeroLineEdit">
      <property name="placeholderText">
-      <string>Nom d'utilisateur</string>
+      <string>Numéro étudiant</string>
      </property>
     </widget>
    </item>

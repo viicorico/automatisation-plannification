@@ -15,23 +15,25 @@ class LoginWindow(QWidget):
         self.listeNumeroEtudiant = []
         self.listeNom = []
         self.listeMotDePasse = []
-        self.load_student_data()
+        self.charger_donnees()
 
 
 
-    def load_student_data(self):
-        # Charger les données des étudiants à partir du fichier CSV
+    def charger_donnees(self):
         fichier_csv = pd.read_csv('Etudiant.csv', header=None)
-        df = fichier_csv
-        self.listeNumeroEtudiant = df[1].tolist()
-        self.listeNom = df[0].tolist()
-        self.listeMotDePasse = df[2].tolist()
-        print(self.listeMotDePasse)
-    def handle_login(self):
-        numeroEtudiant = self.findChild(QLineEdit, 'numeroLineEdit').text()
-        motDePasse = self.findChild(QLineEdit, 'passwordLineEdit').text()
+        tableau = fichier_csv.values
 
-        if self.authentifier(numeroEtudiant, motDePasse):
+        self.listeNumeroEtudiant = [str(row[1]).strip() for row in tableau]
+        self.listeNom = [row[0] for row in tableau]
+        self.listeMotDePasse = [str(row[2]).strip() for row in tableau]
+
+    def handle_login(self):
+        numeroEtudiant = self.findChild(QLineEdit, 'numeroLineEdit').text().strip()
+        motDePasse = self.findChild(QLineEdit, 'passwordLineEdit').text().strip()
+
+        print(f"Tentative de connexion avec - Numéro: {numeroEtudiant}, Mot de passe: {motDePasse}")  # Debug print
+
+        if (self.authentifier(numeroEtudiant, motDePasse) == True) :
             self.planning_window = MainWindow()
             self.planning_window.show()
             self.close()
@@ -40,8 +42,17 @@ class LoginWindow(QWidget):
 
     def authentifier(self, numero, motDePasse):
         try:
-            index = self.listeNumeroEtudiant.index(int(numero))
-            return self.listeMotDePasse[index] == motDePasse
+            if numero in self.listeNumeroEtudiant:
+                index = self.listeNumeroEtudiant.index(numero)
+                print(index)
+                print(self.listeMotDePasse[index])
+                print(self.listeMotDePasse[index])
+                print(motDePasse)
+                if (self.listeMotDePasse[index] == motDePasse):
+                    print("Connexion réussie")
+                    return True
+            else:
+                return False
         except ValueError:
             return False
 
