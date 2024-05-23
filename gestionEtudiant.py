@@ -25,14 +25,17 @@ def lire_donnees_etudiants(fichier_csv):
         listeFiliere.append(tableau[i][3])
 
     return listeNumeroEtudiant, listeNom, listeMotDePasse, listeFiliere
-"""
-def rechercherEtu(listeNumeroEtudiants,listeNom,listeMotDePasse,numeroRecherche):
+
+# Fonction pour rechercher un étudiant selon son numéro d'étudiant
+# renvoit le nom, la filiere le mot de passe de l'étudiant si trouvé, sinon renvoie -1,-1,-1 si on trouve pas l'élève'
+def rechercherEtu(listeNumeroEtudiants,listeNom,listeMotDePasse, listeFiliere,numeroRecherche):
     compteur = len(listeNumeroEtudiants)
     for i in range(compteur):
         if(listeNumeroEtudiants[i]==numeroRecherche):
-            return(listeNom[i], listeMotDePasse[i])
-    return (-1,-1)
+            return(listeNom[i], listeMotDePasse[i], listeFiliere[i])
+    return (-1,-1,-1)
 
+"""
 numeroRecherche  = 723156
 
 nom, motdePasse = rechercherEtu(listeNumeroEtudiant, listeNom, listeMotDePasse, numeroRecherche)
