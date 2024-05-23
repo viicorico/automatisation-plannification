@@ -115,7 +115,7 @@ QMessageBox QLabel {
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <widget class="QLineEdit" name="usernameLineEdit">
+    <widget class="QLineEdit" name="numeroLineEdit">
      <property name="placeholderText">
       <string>Nom d'utilisateur</string>
      </property>
