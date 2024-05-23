@@ -1,6 +1,20 @@
 from PyQt5.QtWidgets import QApplication, QMainWindow
 from login import LoginWindow
 
+from gestionEtudiant import lire_donnees_etudiants
+
+# Chemin du fichier CSV
+fichier_csv = 'Etudiant.csv'
+
+# Lire les données des étudiants
+listeNumeroEtudiant, listeNom, listeMotDePasse, listeFiliere = lire_donnees_etudiants(fichier_csv)
+
+# Afficher les listes
+print("Numéros d'étudiant:", listeNumeroEtudiant)
+print("Noms:", listeNom)
+print("Mots de passe:", listeMotDePasse)
+print("Filières:", listeFiliere)
+
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
