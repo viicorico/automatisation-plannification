@@ -1,0 +1,20 @@
+Session,Date,Début,Fin,Matière
+1,2024-05-22,08:00:00,09:30:00,Interaction et coopération III
+2,2024-05-22,09:45:00,11:45:00,Gestion de l'entreprise II
+3,2024-05-22,13:00:00,14:00:00,Analyse et programmation orientée objet (Java)
+3,2024-05-22,13:00:00,15:00:00,Architecture des ordinateurs
+4,2024-05-22,15:15:00,17:15:00,Probabilités avancées et simulation Monte Carlo
+4,2024-05-22,15:15:00,17:15:00,Analyse orientée objet
+5,2024-05-23,08:00:00,10:00:00,Statistiques inférentielles
+5,2024-05-23,08:00:00,10:00:00,Programmation logique & Prolog
+6,2024-05-23,10:15:00,12:15:00,Optimisation linéaire
+6,2024-05-23,10:15:00,12:15:00,Programmation Java et IHM
+7,2024-05-23,13:00:00,15:00:00,Optimisation Linéaire
+7,2024-05-23,13:00:00,15:30:00,Topologie et Analyse Fonctionnelle
+7,2024-05-23,13:00:00,15:00:00,Datamining 1
+8,2024-05-23,15:15:00,17:15:00,Algorithmique procédurale avancée
+8,2024-05-23,15:15:00,17:55:00,Optimisation non linéaire
+8,2024-05-23,15:15:00,17:15:00,Théorie des graphes
+9,2024-05-24,08:00:00,10:00:00,Architecture réseaux
+9,2024-05-24,08:00:00,10:00:00,Equations différentielles
+9,2024-05-24,08:00:00,10:00:00,Analyse numérique
