@@ -161,8 +161,8 @@ def muter_population(population, mutation_rate, nb_places_par_session, filiere_e
     return population
 
 
-def generer_horaires(solution, filiere_matieres_dict, durees_examens, debut=datetime.datetime(2024, 5, 22, 8, 0),
-                     amplitude_horaire=9, pause_midi=datetime.timedelta(hours=1), pause=datetime.timedelta(minutes=15)):
+def generer_horaires(solution, filiere_matieres_dict, durees_examens, debut,
+                     amplitude_horaire, pause_midi, pause):
     horaires = {}
     current_time = debut
     end_time = debut + datetime.timedelta(hours=amplitude_horaire)
@@ -173,29 +173,34 @@ def generer_horaires(solution, filiere_matieres_dict, durees_examens, debut=date
         horaires[session] = []
         session_start_time = current_time
 
-        # Ajustement pour la première session de la journée
+        # Collecte des examens pour cette session
         exam_times = []
         for matiere, session_assign in list(solution_copy.items()):
             if session_assign == session:
                 debut_examen = session_start_time
-                fin_examen = session_start_time + datetime.timedelta(minutes=durees_examens[matiere])
+                fin_examen = debut_examen + datetime.timedelta(minutes=durees_examens[matiere])
+
+                # Ajouter l'examen à la liste de la session
                 exam_times.append((debut_examen, fin_examen, matiere))
                 del solution_copy[matiere]
 
-        if session_start_time.time() == debut.time():
-            latest_end_time = max(fin for _, fin, _ in exam_times)
+        # Ajustement pour la pause déjeuner pour toute la session
+        if any(start.time() < datetime.time(12, 0) and end.time() > datetime.time(12, 0) for start, end, _ in exam_times):
             for i, (start, end, matiere) in enumerate(exam_times):
-                adjusted_start = latest_end_time - (end - start)
-                exam_times[i] = (adjusted_start, latest_end_time, matiere)
+                if start.time() < datetime.time(12, 0):
+                    adjusted_start = datetime.datetime.combine(start.date(), datetime.time(13, 0))
+                    adjusted_end = adjusted_start + (end - start)
+                    exam_times[i] = (adjusted_start, adjusted_end, matiere)
 
         # Ajustement pour la dernière session de la journée
-        if session_start_time.time() >= (end_time - datetime.timedelta(hours=1)).time():
+        if any(end > end_time for _, end, _ in exam_times):
             earliest_start_time = min(start for start, _, _ in exam_times)
             for i, (start, end, matiere) in enumerate(exam_times):
-                adjusted_end = earliest_start_time + (end - start)
-                exam_times[i] = (earliest_start_time, adjusted_end, matiere)
+                adjusted_start = earliest_start_time + pause
+                adjusted_end = adjusted_start + (end - start)
+                exam_times[i] = (adjusted_start, adjusted_end, matiere)
 
-        # Enregistre les horaires ajustés
+        # Enregistre les horaires ajustés pour cette session
         for start, end, matiere in exam_times:
             horaires[session].append((start.date(), start.time(), end.time(), matiere))
             current_time = end + pause
@@ -204,12 +209,14 @@ def generer_horaires(solution, filiere_matieres_dict, durees_examens, debut=date
         if current_time.time() >= datetime.time(12, 0) and current_time.time() < datetime.time(13, 0):
             current_time = current_time.replace(hour=13, minute=0)
 
-        # Vérifie si l'amplitude horaire est dépassée pour le jour courant
-        if current_time.time() >= end_time.time():
+        max_exam_duration = max(durees_examens[matiere] for _, _, matiere in exam_times)
+        # Vérifie si l'amplitude horaire est dépassée pour le jour courant en ajoutant la durée maximale des examens
+        if current_time + datetime.timedelta(minutes=max_exam_duration) >= end_time:
             current_time = current_time.replace(hour=debut.hour, minute=debut.minute) + datetime.timedelta(days=1)
             end_time = current_time + datetime.timedelta(hours=amplitude_horaire)
 
     return horaires
+
 
 
 def dessiner_graphe(G, solution):

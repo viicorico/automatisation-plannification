@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>800</width>
-    <height>600</height>
+    <width>1000</width>
+    <height>700</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -19,9 +19,12 @@
      <rect>
       <x>10</x>
       <y>50</y>
-      <width>780</width>
-      <height>500</height>
+      <width>980</width>
+      <height>600</height>
      </rect>
+    </property>
+    <property name="showGrid">
+     <bool>false</bool>
     </property>
    </widget>
    <widget class="QComboBox" name="comboBox">
@@ -34,13 +37,23 @@
      </rect>
     </property>
    </widget>
+   <widget class="QComboBox" name="comboBoxFiliere">
+    <property name="geometry">
+     <rect>
+      <x>220</x>
+      <y>10</y>
+      <width>200</width>
+      <height>25</height>
+     </rect>
+    </property>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>800</width>
+     <width>1000</width>
      <height>21</height>
     </rect>
    </property>

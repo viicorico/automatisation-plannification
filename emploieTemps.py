@@ -50,7 +50,6 @@ def generer_et_afficher_emploi_du_temps(filiere_matieres, filiere_effectifs, dur
         emploi_du_temps_df = pd.DataFrame(emploi_du_temps_df)
 
     return emploi_du_temps_df
-
 def ecrire_emploi_du_temps_csv(df, file_path):
     """Écrit le DataFrame dans un fichier CSV existant ou crée un nouveau fichier si nécessaire."""
     print("Écriture du DataFrame dans le fichier CSV...")
@@ -96,6 +95,7 @@ def generate_time_slots(start_time, end_time, interval_minutes):
     while current_time < end_time:
         slots.append(current_time.strftime('%H:%M'))
         current_time += datetime.timedelta(minutes=interval_minutes)
+    slots.append(end_time.strftime('%H:%M'))
     return slots
 
 def generate_random_color(existing_colors):
@@ -107,9 +107,9 @@ def generate_random_color(existing_colors):
 
 # Paramètres de l'emploi du temps
 date_debut = datetime.datetime(2024, 5, 22, 8, 0)
-amplitude_horaire_journaliere = 9  # en heures
+amplitude_horaire_journaliere = 10  # en heures
 pause_dejeuner = datetime.timedelta(hours=1)
-pause_entre_examens = datetime.timedelta(minutes=15)
+pause_entre_examens = datetime.timedelta(minutes=20)
 
 # Générer l'emploi du temps
 emploi_du_temps_df = generer_et_afficher_emploi_du_temps(filiere_matieres, filiere_effectifs, durees_examens,
@@ -145,10 +145,17 @@ class ScheduleApp(QtWidgets.QMainWindow):
         loadUi("EDT1.ui", self)
         self.date_debut = date_debut  # Sauvegarde de la date de début
         self.amplitude_horaire_journaliere = amplitude_horaire_journaliere
-        self.interval_minutes = 15  # Intervalle de 15 minutes
+        self.interval_minutes = 5  # Intervalle de 5 minutes
+        self.comboBox.currentIndexChanged.connect(self.change_schedule)
+        self.comboBoxFiliere.currentIndexChanged.connect(self.filter_schedule)
+        self.populate_filiere_combobox()  # Remplir la combobox des filières
         self.populate_schedule()  # Affiche l'emploi du temps
 
-        self.comboBox.currentIndexChanged.connect(self.change_schedule)
+    def populate_filiere_combobox(self):
+        # Ajoute toutes les filières disponibles dans la combobox
+        self.comboBoxFiliere.addItem("Toutes")
+        for filiere, _ in filiere_matieres:
+            self.comboBoxFiliere.addItem(filiere)
 
     def populate_schedule(self):
         emploi_du_temps_df = lire_emploi_du_temps_csv('emploi_du_temps.csv')
@@ -156,11 +163,17 @@ class ScheduleApp(QtWidgets.QMainWindow):
             QtWidgets.QMessageBox.warning(self, "Erreur", "Impossible de charger l'emploi du temps.")
             return
 
-        # Vérifier que la colonne 'Matière' existe
-        if 'Matière' not in emploi_du_temps_df.columns:
-            QtWidgets.QMessageBox.warning(self, "Erreur",
-                                          f"Colonne 'Matière' non trouvée. Colonnes disponibles : {emploi_du_temps_df.columns.tolist()}")
+        self.filter_schedule()
+
+    def filter_schedule(self):
+        filiere_selectionnee = self.comboBoxFiliere.currentText()
+        emploi_du_temps_df = lire_emploi_du_temps_csv('emploi_du_temps.csv')
+        if emploi_du_temps_df is None:
             return
+
+        if filiere_selectionnee != "Toutes":
+            emploi_du_temps_df = emploi_du_temps_df[emploi_du_temps_df["Matière"].isin(
+                [matiere for filiere, matieres in filiere_matieres if filiere == filiere_selectionnee for matiere in matieres])]
 
         start_time = self.date_debut.time()
         end_time = (datetime.datetime.combine(datetime.date.today(), start_time) +
@@ -175,7 +188,8 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.tableWidget.setRowCount(len(time_slots))  # Nombre de créneaux horaires
         self.tableWidget.setColumnCount(6)  # 6 jours de la semaine
         self.tableWidget.setHorizontalHeaderLabels(['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'])
-        self.tableWidget.setVerticalHeaderLabels(time_slots)
+        # Afficher une étiquette toutes les 30 minutes
+        self.tableWidget.setVerticalHeaderLabels([time_slots[i] if i % 6 == 0 else '' for i in range(len(time_slots))])
 
         # Clear existing data
         self.tableWidget.clearContents()
@@ -203,8 +217,8 @@ class ScheduleApp(QtWidgets.QMainWindow):
 
         for _, entry in emploi_du_temps_df.iterrows():
             date = entry["Date"]
-            start_time = entry["Début"][:5]  # Ajustement du format de l'heure
-            end_time = entry["Fin"][:5]  # Ajustement du format de l'heure
+            start_time = entry["Début"][:5]
+            end_time = entry["Fin"][:5]
             subject = entry["Matière"]
 
             print(f"Traitement de l'entrée : {entry}")
@@ -216,16 +230,23 @@ class ScheduleApp(QtWidgets.QMainWindow):
             print(f"start_row: {start_row}, end_row: {end_row}, col: {col}")
 
             if start_row is not None and end_row is not None and col is not None:
-                for row in range(start_row, end_row):
+                duration_minutes = (datetime.datetime.strptime(end_time, '%H:%M') - datetime.datetime.strptime(start_time, '%H:%M')).seconds // 60
+                duration_intervals = duration_minutes // self.interval_minutes
+
+                for row in range(start_row, start_row + duration_intervals):
                     if row == start_row:
                         item = QtWidgets.QTableWidgetItem(f"{subject}\n\n{entry['Session']}")
                     else:
                         item = QtWidgets.QTableWidgetItem("")
                     item.setBackground(QtGui.QColor(subject_colors.get(subject, "#FFFFFF")))
+                    item.setFlags(QtCore.Qt.ItemIsEnabled)  # Rendre les cellules non éditables
                     self.tableWidget.setItem(row, col, item)
                     print(f"Élément ajouté à la ligne {row}, colonne {col}")
 
-        self.tableWidget.resizeRowsToContents()  # Resize rows to fit content
+        # Ajuster la hauteur des lignes pour qu'elles soient proportionnelles aux créneaux de 5 minutes
+        for row in range(len(time_slots)):
+            self.tableWidget.setRowHeight(row, 10)  # Par exemple, 10 pixels par créneau de 5 minutes
+
         self.tableWidget.resizeColumnsToContents()  # Resize columns to fit content
 
     def change_schedule(self):
