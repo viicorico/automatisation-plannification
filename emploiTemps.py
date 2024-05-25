@@ -36,6 +36,7 @@ for filiere, matieres in filiere_matieres:
     print(f"{filiere} : {matieres}")
 
 
+
 # Paramètres de l'emploi du temps
 date_debut = datetime.datetime(2024, 5, 22, 8, 0)
 amplitude_horaire_journaliere = 10  # en heures
@@ -101,7 +102,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.comboBoxFiliere.currentIndexChanged.connect(self.filter_schedule)
         self.buttonRechercher.clicked.connect(self.search_student)  # Connecter le bouton de recherche
         self.populate_filiere_combobox()  # Remplir la combobox des filières
-        self.populate_schedule()  # Affiche l'emploi du temps
+        self.filter_schedule()  # Filtrer et afficher l'emploi du temps dès le chargement de l'application
         self.populate_completer()  # Remplir le completer
 
     def populate_filiere_combobox(self):
@@ -337,9 +338,9 @@ class ScheduleApp(QtWidgets.QMainWindow):
     def change_schedule(self):
         self.populate_schedule()
 
-
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
     window = ScheduleApp()
     window.show()
     sys.exit(app.exec_())
+

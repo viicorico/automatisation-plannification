@@ -1,10 +1,9 @@
 import pandas as pd
 from PyQt5.QtWidgets import QWidget, QApplication, QMessageBox, QLineEdit
 from PyQt5.uic import loadUi
+from emploiTemps import ScheduleApp
 
-# Assurez-vous que 'MainWindow' dans 'planning.py' est correctement défini
 from planning import MainWindow
-
 
 
 class LoginWindow(QWidget):
@@ -50,8 +49,8 @@ class LoginWindow(QWidget):
 
         elif (len(numero) == 3):
             if (self.authentifierAdmin(numero, motDePasse) == True) :
-                self.planning_window = MainWindow()
-                self.planning_window.show()
+                self.emploiTemps_window = ScheduleApp()
+                self.emploiTemps_window.show()
                 self.close()
             else:
                 QMessageBox.warning(self, 'Erreur', 'Numéro étudiant ou mot de passe incorrect.')
@@ -90,7 +89,7 @@ class LoginWindow(QWidget):
         except ValueError:
             return False
 
-
+            
 if __name__ == '__main__':
     import sys
 
