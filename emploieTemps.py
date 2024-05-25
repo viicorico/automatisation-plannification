@@ -1,17 +1,17 @@
 # -*- coding: utf-8 -*-
 
 import datetime
+import locale
 import os
 import sys
 import pandas as pd
 import random
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.uic import loadUi
-from algo import generer_graphe, algorithme_genetique, generer_horaires
 from gestionEtudiant import calculer_effectifs_par_filiere
 from gestionListeSalle import lire_salles_et_capacites
 from gestionMatiere import extraire_matieres_et_durees, extraire_filieres_et_matieres
-
+from gestionEmploieTemps import generer_et_afficher_emploi_du_temps,ecrire_emploi_du_temps_csv,lire_emploi_du_temps_csv,afficher_emploi_du_temps_par_session,generate_time_slots,generate_random_color
 # Réglages de l'affichage de pandas
 pd.set_option('display.max_columns', None)  # Afficher toutes les colonnes
 pd.set_option('display.max_rows', None)  # Afficher toutes les lignes
@@ -30,80 +30,6 @@ print("Liste des matières extraites :")
 for filiere, matieres in filiere_matieres:
     print(f"{filiere} : {matieres}")
 
-def generer_et_afficher_emploi_du_temps(filiere_matieres, filiere_effectifs, durees_examens, date_debut,
-                                        amplitude_horaire_journaliere, pause_dejeuner, pause_entre_examens,
-                                        salles_capacites, max_iterations=1000, population_size=50, mutation_rate=0.1,
-                                        nb_iterations=100):
-    filiere_matieres_dict = {matiere: filiere for filiere, matieres in filiere_matieres for matiere in matieres}
-    nb_places_par_session = sum(salles_capacites.values())
-    graphe = generer_graphe(filiere_matieres)
-    meilleure_solution, variance = algorithme_genetique(graphe, max_iterations, population_size, mutation_rate,
-                                                        nb_iterations, nb_places_par_session, filiere_effectifs,
-                                                        filiere_matieres_dict)
-    horaires = generer_horaires(meilleure_solution, filiere_matieres_dict, durees_examens, debut=date_debut,
-                                amplitude_horaire=amplitude_horaire_journaliere, pause_midi=pause_dejeuner,
-                                pause=pause_entre_examens)
-    emploi_du_temps_df = afficher_emploi_du_temps_par_session(horaires)
-
-    # Ensure emploi_du_temps_df is a DataFrame
-    if not isinstance(emploi_du_temps_df, pd.DataFrame):
-        emploi_du_temps_df = pd.DataFrame(emploi_du_temps_df)
-
-    return emploi_du_temps_df
-def ecrire_emploi_du_temps_csv(df, file_path):
-    """Écrit le DataFrame dans un fichier CSV existant ou crée un nouveau fichier si nécessaire."""
-    print("Écriture du DataFrame dans le fichier CSV...")
-    print("Colonnes du DataFrame à écrire :", df.columns.tolist())
-    df.to_csv(file_path, index=False)
-    print(f"Le contenu du fichier '{file_path}' a été mis à jour avec succès.")
-
-def lire_emploi_du_temps_csv(file_path):
-    """Lit le fichier CSV et renvoie un DataFrame."""
-    if os.path.exists(file_path):
-        df = pd.read_csv(file_path)
-        print("Données lues du fichier CSV :", df.head())
-        print("Colonnes lues du fichier CSV :", df.columns.tolist())
-        return df
-    else:
-        print(f"Erreur : le fichier '{file_path}' n'existe pas.")
-        return None
-
-def afficher_emploi_du_temps_par_session(horaires):
-    # Créer une liste pour collecter les informations des examens
-    emploi_du_temps_data = []
-
-    for session, exams in horaires.items():
-        for date, debut, fin, matiere in exams:
-            emploi_du_temps_data.append({
-                "Session": session + 1,
-                "Date": date,
-                "Début": debut,
-                "Fin": fin,
-                "Matière": matiere
-            })
-
-    # Convertir la liste en DataFrame
-    emploi_du_temps_df = pd.DataFrame(emploi_du_temps_data)
-    print("Colonnes du DataFrame généré :", emploi_du_temps_df.columns.tolist())
-    print("Aperçu du DataFrame généré :", emploi_du_temps_df.head())
-    return emploi_du_temps_df
-
-def generate_time_slots(start_time, end_time, interval_minutes):
-    """Génère une liste de créneaux horaires entre start_time et end_time avec l'intervalle donné."""
-    slots = []
-    current_time = start_time
-    while current_time < end_time:
-        slots.append(current_time.strftime('%H:%M'))
-        current_time += datetime.timedelta(minutes=interval_minutes)
-    slots.append(end_time.strftime('%H:%M'))
-    return slots
-
-def generate_random_color(existing_colors):
-    """Génère une couleur aléatoire qui est suffisamment différente des couleurs existantes."""
-    while True:
-        color = "#{:06x}".format(random.randint(0, 0xFFFFFF))
-        if color not in existing_colors:
-            return color
 
 # Paramètres de l'emploi du temps
 date_debut = datetime.datetime(2024, 5, 22, 8, 0)
@@ -139,23 +65,46 @@ else:
 
 # PyQt5 Schedule Display Application
 
+
+# Set locale to French for day names
+locale.setlocale(locale.LC_TIME, 'fr_FR.UTF-8')
+
+
 class ScheduleApp(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
         loadUi("EDT1.ui", self)
-        self.date_debut = date_debut  # Sauvegarde de la date de début
-        self.amplitude_horaire_journaliere = amplitude_horaire_journaliere
+        self.date_debut = datetime.datetime(2024, 5, 22, 8, 0)  # Sauvegarde de la date de début
+        self.amplitude_horaire_journaliere = 10
         self.interval_minutes = 5  # Intervalle de 5 minutes
         self.comboBox.currentIndexChanged.connect(self.change_schedule)
         self.comboBoxFiliere.currentIndexChanged.connect(self.filter_schedule)
+        self.buttonRechercher.clicked.connect(self.search_student)  # Connecter le bouton de recherche
         self.populate_filiere_combobox()  # Remplir la combobox des filières
         self.populate_schedule()  # Affiche l'emploi du temps
+        self.populate_completer()  # Remplir le completer
 
     def populate_filiere_combobox(self):
         # Ajoute toutes les filières disponibles dans la combobox
         self.comboBoxFiliere.addItem("Toutes")
         for filiere, _ in filiere_matieres:
             self.comboBoxFiliere.addItem(filiere)
+
+    def populate_completer(self):
+        # Remplir le completer avec les prénoms des étudiants
+        etudiant_csv_path = 'Etudiant.csv'
+        if os.path.exists(etudiant_csv_path):
+            etudiants_df = pd.read_csv(etudiant_csv_path, header=None)  # Lire sans en-têtes
+            self.etudiants_df = etudiants_df  # Stocker le DataFrame des étudiants
+            print("Colonnes trouvées dans le fichier CSV:",
+                  etudiants_df.columns.tolist())  # Afficher les colonnes pour le débogage
+            prenoms = etudiants_df.iloc[:, 0].unique().tolist()  # Utiliser la première colonne par défaut
+            completer = QtWidgets.QCompleter(prenoms, self.lineEditPrenom)
+            completer.setCompletionMode(QtWidgets.QCompleter.PopupCompletion)
+            completer.setCaseSensitivity(QtCore.Qt.CaseInsensitive)
+            self.lineEditPrenom.setCompleter(completer)
+        else:
+            print(f"Erreur : le fichier '{etudiant_csv_path}' n'existe pas.")
 
     def populate_schedule(self):
         emploi_du_temps_df = lire_emploi_du_temps_csv('emploi_du_temps.csv')
@@ -173,7 +122,8 @@ class ScheduleApp(QtWidgets.QMainWindow):
 
         if filiere_selectionnee != "Toutes":
             emploi_du_temps_df = emploi_du_temps_df[emploi_du_temps_df["Matière"].isin(
-                [matiere for filiere, matieres in filiere_matieres if filiere == filiere_selectionnee for matiere in matieres])]
+                [matiere for filiere, matieres in filiere_matieres if filiere == filiere_selectionnee for matiere in
+                 matieres])]
 
         start_time = self.date_debut.time()
         end_time = (datetime.datetime.combine(datetime.date.today(), start_time) +
@@ -186,8 +136,13 @@ class ScheduleApp(QtWidgets.QMainWindow):
         print("Créneaux horaires générés :", time_slots)
 
         self.tableWidget.setRowCount(len(time_slots))  # Nombre de créneaux horaires
-        self.tableWidget.setColumnCount(6)  # 6 jours de la semaine
-        self.tableWidget.setHorizontalHeaderLabels(['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'])
+        unique_dates = emploi_du_temps_df['Date'].unique()
+        self.tableWidget.setColumnCount(len(unique_dates))  # Nombre de jours dans le planning
+
+        # Include both date and day of the week in column headers
+        column_headers = [f"{date} ({pd.to_datetime(date).strftime('%A')})" for date in unique_dates]
+        self.tableWidget.setHorizontalHeaderLabels(column_headers)  # Afficher les dates et jours des sessions
+
         # Afficher une étiquette toutes les 30 minutes
         self.tableWidget.setVerticalHeaderLabels([time_slots[i] if i % 6 == 0 else '' for i in range(len(time_slots))])
 
@@ -205,9 +160,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
 
         print("Couleurs générées pour chaque matière :", subject_colors)
 
-        date_to_col = {}
-        for i in range(6):
-            date_to_col[(self.date_debut + datetime.timedelta(days=i)).strftime("%Y-%m-%d")] = i
+        date_to_col = {date: idx for idx, date in enumerate(unique_dates)}
 
         print("Mapping des dates aux colonnes :", date_to_col)
 
@@ -230,7 +183,8 @@ class ScheduleApp(QtWidgets.QMainWindow):
             print(f"start_row: {start_row}, end_row: {end_row}, col: {col}")
 
             if start_row is not None and end_row is not None and col is not None:
-                duration_minutes = (datetime.datetime.strptime(end_time, '%H:%M') - datetime.datetime.strptime(start_time, '%H:%M')).seconds // 60
+                duration_minutes = (datetime.datetime.strptime(end_time, '%H:%M') - datetime.datetime.strptime(
+                    start_time, '%H:%M')).seconds // 60
                 duration_intervals = duration_minutes // self.interval_minutes
 
                 for row in range(start_row, start_row + duration_intervals):
@@ -249,8 +203,24 @@ class ScheduleApp(QtWidgets.QMainWindow):
 
         self.tableWidget.resizeColumnsToContents()  # Resize columns to fit content
 
+    def search_student(self):
+        prenom = self.lineEditPrenom.text()
+        print(f"Recherche pour le prénom : {prenom}")
+
+        if hasattr(self, 'etudiants_df'):
+            etudiants_filtered = self.etudiants_df[self.etudiants_df.iloc[:, 0] == prenom]
+            if not etudiants_filtered.empty:
+                print(f"Étudiants trouvés pour le prénom {prenom} :")
+                print(etudiants_filtered)
+                # Afficher les informations pertinentes des étudiants trouvés
+            else:
+                print(f"Aucun étudiant trouvé pour le prénom {prenom}")
+        else:
+            print("Erreur : Les données des étudiants ne sont pas chargées.")
+
     def change_schedule(self):
         self.populate_schedule()
+
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)

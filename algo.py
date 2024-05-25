@@ -251,7 +251,24 @@ def afficher_emploi_du_temps_par_session_affichage(horaires):
             print(f"{date} {debut} - {fin}: {matiere}")
 
 
+def afficher_emploi_du_temps_etudiant_affichage(horaires, filiere, filiere_matieres_dict):
+    # Créer une liste pour collecter les informations des examens
+    emploi_du_temps_data = []
 
+    for session, exams in horaires.items():
+        for date, debut, fin, matiere in exams:
+            if filiere_matieres_dict[matiere] == filiere:
+                emploi_du_temps_data.append({
+                    "Session": session + 1,
+                    "Date": date,
+                    "Début": debut,
+                    "Fin": fin,
+                    "Matière": matiere
+                })
+
+    # Convertir la liste en DataFrame
+    emploi_du_temps_df = pd.DataFrame(emploi_du_temps_data)
+    return emploi_du_temps_df
 def afficher_emploi_du_temps_etudiant(horaires, filiere, filiere_matieres_dict):
     print(f"Emploi du temps pour la filière {filiere}:")
     for session, exams in horaires.items():

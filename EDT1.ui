@@ -18,9 +18,9 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>50</y>
+      <y>90</y>
       <width>980</width>
-      <height>600</height>
+      <height>560</height>
      </rect>
     </property>
     <property name="showGrid">
@@ -45,6 +45,32 @@
       <width>200</width>
       <height>25</height>
      </rect>
+    </property>
+   </widget>
+   <widget class="QLineEdit" name="lineEditPrenom">
+    <property name="geometry">
+     <rect>
+      <x>440</x>
+      <y>10</y>
+      <width>200</width>
+      <height>25</height>
+     </rect>
+    </property>
+    <property name="placeholderText">
+     <string>Entrez le prénom</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="buttonRechercher">
+    <property name="geometry">
+     <rect>
+      <x>650</x>
+      <y>10</y>
+      <width>100</width>
+      <height>25</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Rechercher</string>
     </property>
    </widget>
   </widget>
