@@ -1,4 +1,5 @@
-from algo import generer_graphe, algorithme_genetique, generer_horaires
+from algo import generer_graphe, algorithme_genetique, generer_horaires, afficher_emploi_du_temps_etudiant_affichage, \
+    get_filiere_etudiant
 import datetime
 import os
 import sys
@@ -78,3 +79,63 @@ def generate_random_color(existing_colors):
         color = "#{:06x}".format(random.randint(0, 0xFFFFFF))
         if color not in existing_colors:
             return color
+
+
+def lire_etudiants_csv(file_path):
+    # Lire le fichier CSV et ne conserver que les colonnes nécessaires
+    df = pd.read_csv(file_path, usecols=[0, 3], header=None, names=["Nom", "Filière"])
+
+    # Initialiser un dictionnaire vide pour stocker les données
+    etudiants_dict = {}
+
+    # Parcourir chaque ligne du DataFrame pour remplir le dictionnaire
+    for index, row in df.iterrows():
+        nom = row["Nom"]
+        filiere = row["Filière"]
+        etudiants_dict[nom] = filiere
+
+    return etudiants_dict
+
+"""
+def generer_et_afficher_emploi_du_temps_Etudiant(filiere_matieres, filiere_effectifs, durees_examens, date_debut,
+                                                 amplitude_horaire_journaliere, pause_dejeuner, pause_entre_examens,
+                                                 salles_capacites, etudiant, max_iterations=1000, population_size=50,
+                                                 mutation_rate=0.1, nb_iterations=100):
+    # Générer un dictionnaire matière -> filière
+    filiere_matieres_dict = {matiere: filiere for filiere, matieres in filiere_matieres.items() for matiere in matieres}
+
+    # Calculer le nombre de places par session
+    nb_places_par_session = sum(salles_capacites.values())
+
+    # Générer le graphe des contraintes d'examen
+    graphe = generer_graphe(filiere_matieres)
+
+    # Trouver la meilleure solution avec l'algorithme génétique
+    meilleure_solution, variance = algorithme_genetique(graphe, max_iterations, population_size, mutation_rate,
+                                                        nb_iterations, nb_places_par_session, filiere_effectifs,
+                                                        filiere_matieres_dict)
+
+    # Générer les horaires à partir de la meilleure solution trouvée
+    horaires = generer_horaires(meilleure_solution, filiere_matieres_dict, durees_examens, debut=date_debut,
+                                amplitude_horaire=amplitude_horaire_journaliere, pause_midi=pause_dejeuner,
+                                pause=pause_entre_examens)
+
+    # Lire les informations des étudiants depuis le fichier CSV
+    etudiants_dict = lire_etudiants_csv("Etudiant.csv")
+
+    # Obtenir la filière de l'étudiant spécifié
+    filiere = get_filiere_etudiant(etudiants_dict, etudiant)
+
+    if filiere:
+        # Afficher l'emploi du temps pour la filière de l'étudiant
+        emploi_du_temps_df = afficher_emploi_du_temps_etudiant_affichage(horaires, filiere, filiere_matieres_dict)
+
+        # Vérifier que l'emploi du temps est bien un DataFrame
+        if not isinstance(emploi_du_temps_df, pd.DataFrame):
+            emploi_du_temps_df = pd.DataFrame(emploi_du_temps_df)
+
+        return emploi_du_temps_df
+    else:
+        print(f"Filière pour l'étudiant {etudiant} introuvable.")
+        return None
+"""

@@ -8,10 +8,15 @@ import pandas as pd
 import random
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.uic import loadUi
+
+from algo import get_filiere_etudiant, afficher_emploi_du_temps_etudiant, afficher_emploi_du_temps_etudiant_affichage
 from gestionEtudiant import calculer_effectifs_par_filiere
 from gestionListeSalle import lire_salles_et_capacites
 from gestionMatiere import extraire_matieres_et_durees, extraire_filieres_et_matieres
-from gestionEmploieTemps import generer_et_afficher_emploi_du_temps,ecrire_emploi_du_temps_csv,lire_emploi_du_temps_csv,afficher_emploi_du_temps_par_session,generate_time_slots,generate_random_color
+from gestionEmploieTemps import generer_et_afficher_emploi_du_temps, ecrire_emploi_du_temps_csv, \
+    lire_emploi_du_temps_csv, afficher_emploi_du_temps_par_session, generate_time_slots, generate_random_color, \
+    lire_etudiants_csv
+
 # Réglages de l'affichage de pandas
 pd.set_option('display.max_columns', None)  # Afficher toutes les colonnes
 pd.set_option('display.max_rows', None)  # Afficher toutes les lignes
@@ -64,8 +69,23 @@ else:
     print("Erreur : impossible de lire les données de l'emploi du temps.")
 
 # PyQt5 Schedule Display Application
+"""
+#Etudiant:
+# Affichage de l'emploi du temps pour un étudiant spécifique
+etudiant = "BELHAJ Wael"  # Changez cette valeur pour l'étudiant souhaité
+emploi_du_temps_df = generer_et_afficher_emploi_du_temps(filiere_matieres, filiere_effectifs, durees_examens,
+                                                         date_debut, amplitude_horaire_journaliere, pause_dejeuner,
+                                                         pause_entre_examens, salles_capacites)
+# Chemin du fichier CSV
+file_path = 'emploi_du_temps_etudiant.csv'
 
+# Écrire l'emploi du temps dans le fichier CSV
+if emploi_du_temps_df is not None and isinstance(emploi_du_temps_df, pd.DataFrame):
+    ecrire_emploi_du_temps_csv(emploi_du_temps_df, file_path)
+else:
+    print("Erreur : l'emploi du temps généré est vide ou n'est pas un DataFrame.")
 
+"""
 # Set locale to French for day names
 locale.setlocale(locale.LC_TIME, 'fr_FR.UTF-8')
 
@@ -113,6 +133,100 @@ class ScheduleApp(QtWidgets.QMainWindow):
             return
 
         self.filter_schedule()
+
+    def filter_scheduled(self, filiere_selectionnee=None):
+        print("Début de filter_schedule")
+        emploi_du_temps_df = lire_emploi_du_temps_csv('emploi_du_temps.csv')
+        if emploi_du_temps_df is None:
+            print("Erreur : Impossible de lire le fichier emploi_du_temps.csv")
+            return
+
+        if filiere_selectionnee is None:
+            filiere_selectionnee = self.comboBoxFiliere.currentText()
+
+        print(f"Filière sélectionnée : {filiere_selectionnee}")
+
+        if filiere_selectionnee != "Toutes":
+            emploi_du_temps_df = emploi_du_temps_df[emploi_du_temps_df["Matière"].isin(
+                [matiere for filiere, matieres in filiere_matieres if filiere == filiere_selectionnee for matiere in matieres])]
+
+        start_time = self.date_debut.time()
+        end_time = (datetime.datetime.combine(datetime.date.today(), start_time) +
+                    datetime.timedelta(hours=self.amplitude_horaire_journaliere)).time()
+
+        time_slots = generate_time_slots(datetime.datetime.combine(datetime.date.today(), start_time),
+                                         datetime.datetime.combine(datetime.date.today(), end_time),
+                                         self.interval_minutes)
+
+        print("Créneaux horaires générés :", time_slots)
+
+        self.tableWidget.setRowCount(len(time_slots))  # Nombre de créneaux horaires
+        unique_dates = emploi_du_temps_df['Date'].unique()
+        self.tableWidget.setColumnCount(len(unique_dates))  # Nombre de jours dans le planning
+
+        # Include both date and day of the week in column headers
+        column_headers = [f"{date} ({pd.to_datetime(date).strftime('%A')})" for date in unique_dates]
+        self.tableWidget.setHorizontalHeaderLabels(column_headers)  # Afficher les dates et jours des sessions
+
+        # Afficher une étiquette toutes les 30 minutes
+        self.tableWidget.setVerticalHeaderLabels([time_slots[i] if i % 6 == 0 else '' for i in range(len(time_slots))])
+
+        # Clear existing data
+        self.tableWidget.clearContents()
+
+        # Générer des couleurs aléatoires pour chaque matière
+        subject_colors = {}
+        existing_colors = set()
+
+        for matiere in emploi_du_temps_df['Matière'].unique():
+            color = generate_random_color(existing_colors)
+            subject_colors[matiere] = color
+            existing_colors.add(color)
+
+        print("Couleurs générées pour chaque matière :", subject_colors)
+
+        date_to_col = {date: idx for idx, date in enumerate(unique_dates)}
+
+        print("Mapping des dates aux colonnes :", date_to_col)
+
+        time_to_row = {time: index for index, time in enumerate(time_slots)}
+
+        print("Mapping des temps aux lignes :", time_to_row)
+
+        for _, entry in emploi_du_temps_df.iterrows():
+            date = entry["Date"]
+            start_time = entry["Début"][:5]
+            end_time = entry["Fin"][:5]
+            subject = entry["Matière"]
+
+            print(f"Traitement de l'entrée : {entry}")
+
+            start_row = time_to_row.get(start_time, None)
+            end_row = time_to_row.get(end_time, None)
+            col = date_to_col.get(date, None)
+
+            print(f"start_row: {start_row}, end_row: {end_row}, col: {col}")
+
+            if start_row is not None and end_row is not None and col is not None:
+                duration_minutes = (datetime.datetime.strptime(end_time, '%H:%M') - datetime.datetime.strptime(start_time, '%H:%M')).seconds // 60
+                duration_intervals = duration_minutes // self.interval_minutes
+
+                for row in range(start_row, start_row + duration_intervals):
+                    if row == start_row:
+                        item = QtWidgets.QTableWidgetItem(f"{subject}\n\n{entry['Session']}")
+                    else:
+                        item = QtWidgets.QTableWidgetItem("")
+                    item.setBackground(QtGui.QColor(subject_colors.get(subject, "#FFFFFF")))
+                    item.setFlags(QtCore.Qt.ItemIsEnabled)  # Rendre les cellules non éditables
+                    self.tableWidget.setItem(row, col, item)
+                    print(f"Élément ajouté à la ligne {row}, colonne {col}")
+
+        # Ajuster la hauteur des lignes pour qu'elles soient proportionnelles aux créneaux de 5 minutes
+        for row in range(len(time_slots)):
+            self.tableWidget.setRowHeight(row, 10)  # Par exemple, 10 pixels par créneau de 5 minutes
+
+        self.tableWidget.resizeColumnsToContents()  # Resize columns to fit content
+        print("Fin de filter_schedule")
 
     def filter_schedule(self):
         filiere_selectionnee = self.comboBoxFiliere.currentText()
@@ -202,22 +316,24 @@ class ScheduleApp(QtWidgets.QMainWindow):
             self.tableWidget.setRowHeight(row, 10)  # Par exemple, 10 pixels par créneau de 5 minutes
 
         self.tableWidget.resizeColumnsToContents()  # Resize columns to fit content
-
     def search_student(self):
         prenom = self.lineEditPrenom.text()
         print(f"Recherche pour le prénom : {prenom}")
 
-        if hasattr(self, 'etudiants_df'):
-            etudiants_filtered = self.etudiants_df[self.etudiants_df.iloc[:, 0] == prenom]
-            if not etudiants_filtered.empty:
-                print(f"Étudiants trouvés pour le prénom {prenom} :")
-                print(etudiants_filtered)
-                # Afficher les informations pertinentes des étudiants trouvés
-            else:
-                print(f"Aucun étudiant trouvé pour le prénom {prenom}")
-        else:
-            print("Erreur : Les données des étudiants ne sont pas chargées.")
+        # Lire les informations des étudiants depuis le fichier CSV
+        etudiants_dict = lire_etudiants_csv("Etudiant.csv")
 
+        # Vérifier si le dictionnaire des étudiants est correctement chargé
+        if etudiants_dict is None:
+            print("Erreur : Impossible de lire le fichier Etudiant.csv")
+            return
+
+        print("Étudiants dict chargé:", etudiants_dict)
+        filiere = get_filiere_etudiant(etudiants_dict, prenom)
+        print(f"Filière trouvée pour l'étudiant {prenom} : {filiere}")
+
+        # Filtrer l'emploi du temps avec la filière trouvée
+        self.filter_scheduled(filiere_selectionnee=filiere)
     def change_schedule(self):
         self.populate_schedule()
 
