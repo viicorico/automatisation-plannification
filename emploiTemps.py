@@ -1,13 +1,11 @@
-# -*- coding: utf-8 -*-
-
 import datetime
 import locale
 import os
 import sys
 import pandas as pd
 from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5.QtGui import QIcon
 from PyQt5.uic import loadUi
-from tabulate import tabulate
 
 from algo import get_filiere_etudiant
 from gestionEtudiant import calculer_effectifs_par_filiere
@@ -16,13 +14,14 @@ from gestionMatiere import extraire_matieres_et_durees, extraire_filieres_et_mat
 from gestionEmploieTemps import generer_et_afficher_emploi_du_temps, ecrire_emploi_du_temps_csv, \
     lire_emploi_du_temps_csv, generate_time_slots, generate_random_color, \
     lire_etudiants_csv, assigner_salles_aux_etudiants
-
-# Réglages de l'affichage de pandas
+# Configurer la locale en français pour les noms de jours
+locale.setlocale(locale.LC_TIME, 'fr_FR.UTF-8')
+# Réglages de l'affichage de pandas pour voir toutes les colonnes et lignes
 pd.set_option('display.max_columns', None)
 pd.set_option('display.max_rows', None)
 pd.set_option('display.width', None)
 
-# Exemple d'utilisation
+# Chargement des fichiers CSV
 fichier_csv_path = 'Etudiant.csv'
 filiere_effectifs = calculer_effectifs_par_filiere(fichier_csv_path)
 fichier_csv_path_salles = 'ListeSalle.csv'
@@ -37,7 +36,7 @@ amplitude_horaire_journaliere = 10
 pause_dejeuner = datetime.timedelta(hours=1)
 pause_entre_examens = datetime.timedelta(minutes=20)
 
-# Générer l'emploi du temps
+# Génération de l'emploi du temps
 emploi_du_temps_df = generer_et_afficher_emploi_du_temps(filiere_matieres, filiere_effectifs, durees_examens,
                                                          date_debut, amplitude_horaire_journaliere, pause_dejeuner,
                                                          pause_entre_examens, salles_capacites)
@@ -45,14 +44,14 @@ emploi_du_temps_df = generer_et_afficher_emploi_du_temps(filiere_matieres, filie
 # Chemin du fichier CSV
 file_path = 'emploi_du_temps.csv'
 
-# Écrire l'emploi du temps dans le fichier CSV
+# Écriture de l'emploi du temps dans un fichier CSV
 if emploi_du_temps_df is not None and isinstance(emploi_du_temps_df, pd.DataFrame):
     ecrire_emploi_du_temps_csv(emploi_du_temps_df, file_path)
 
-# Lire l'emploi du temps depuis le fichier CSV
+# Lecture de l'emploi du temps depuis le fichier CSV
 emploi_du_temps_lu_df = lire_emploi_du_temps_csv(file_path)
 
-# Pré-assigner les salles à tous les étudiants et écrire dans un fichier CSV
+# Pré-assignation des salles à tous les étudiants et écriture dans un fichier CSV
 etudiants_df = pd.read_csv(fichier_csv_path, header=None)
 assignments_list = []
 
@@ -66,26 +65,31 @@ all_assignments_df = pd.concat(assignments_list, ignore_index=True)
 preassigned_rooms_file = 'Salle_Place.csv'
 all_assignments_df.to_csv(preassigned_rooms_file, index=False)
 
-# Application PyQt5 pour l'affichage de l'emploi du temps
+
 etudiants_file = 'Etudiant.csv'
 sessions_file = 'emploi_du_temps.csv'
 matieres_file = 'Matieres.csv'
 salles_file = 'listeSalle.csv'
 
-# Configurer la locale en français pour les noms de jours
-locale.setlocale(locale.LC_TIME, 'fr_FR.UTF-8')
 
 
+# Application PyQt5 pour l'affichage de l'emploi du temps
 class ScheduleApp(QtWidgets.QMainWindow):
     def __init__(self):
+        """Initialise la fenêtre principale de l'application."""
         super().__init__()
         loadUi("EDT1.ui", self)
+        self.setWindowIcon(QIcon('logo.ico'))
         self.date_debut = datetime.datetime(2024, 5, 22, 8, 0)
         self.amplitude_horaire_journaliere = 10
         self.interval_minutes = 5
+
+        # Connexion des signaux et des slots
         self.comboBox.currentIndexChanged.connect(self.change_schedule)
         self.comboBoxFiliere.currentIndexChanged.connect(self.filter_schedule)
         self.buttonRechercher.clicked.connect(self.search_student)
+
+        # Initialisation de la fenêtre
         self.populate_filiere_combobox()
         self.filter_schedule()
         self.populate_completer()
@@ -95,11 +99,13 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.preassigned_rooms_df = pd.read_csv(preassigned_rooms_file)
 
     def populate_filiere_combobox(self):
+        """Remplit la combobox des filières."""
         self.comboBoxFiliere.addItem("Toutes")
         for filiere, _ in filiere_matieres:
             self.comboBoxFiliere.addItem(filiere)
 
     def populate_completer(self):
+        """Configure l'auto-complétion pour la recherche d'étudiants."""
         etudiant_csv_path = 'Etudiant.csv'
         if os.path.exists(etudiant_csv_path):
             etudiants_df = pd.read_csv(etudiant_csv_path, header=None)
@@ -113,6 +119,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
             QtWidgets.QMessageBox.warning(self, "Erreur", f"Le fichier '{etudiant_csv_path}' n'existe pas.")
 
     def populate_schedule(self):
+        """Charge l'emploi du temps depuis le fichier CSV et l'affiche."""
         emploi_du_temps_df = lire_emploi_du_temps_csv('emploi_du_temps.csv')
         if emploi_du_temps_df is None:
             QtWidgets.QMessageBox.warning(self, "Erreur", "Impossible de charger l'emploi du temps.")
@@ -121,6 +128,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.filter_schedule()
 
     def filter_scheduled(self, filiere_selectionnee=None):
+        """Filtre l'emploi du temps en fonction de la filière sélectionnée."""
         emploi_du_temps_df = lire_emploi_du_temps_csv('emploi_du_temps.csv')
         if emploi_du_temps_df is None:
             QtWidgets.QMessageBox.warning(self, "Erreur", "Impossible de lire le fichier emploi_du_temps.csv")
@@ -131,8 +139,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
 
         if filiere_selectionnee != "Toutes":
             emploi_du_temps_df = emploi_du_temps_df[emploi_du_temps_df["Matière"].isin(
-                [matiere for filiere, matieres in filiere_matieres if filiere == filiere_selectionnee for matiere in
-                 matieres])]
+                [matiere for filiere, matieres in filiere_matieres if filiere == filiere_selectionnee for matiere in matieres])]
 
         start_time = self.date_debut.time()
         end_time = (datetime.datetime.combine(datetime.date.today(), start_time) +
@@ -176,8 +183,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
             col = date_to_col.get(date, None)
 
             if start_row is not None and end_row is not None and col is not None:
-                duration_minutes = (datetime.datetime.strptime(end_time, '%H:%M') - datetime.datetime.strptime(
-                    start_time, '%H:%M')).seconds // 60
+                duration_minutes = (datetime.datetime.strptime(end_time, '%H:%M') - datetime.datetime.strptime(start_time, '%H:%M')).seconds // 60
                 duration_intervals = duration_minutes // self.interval_minutes
 
                 for row in range(start_row, start_row + duration_intervals):
@@ -195,6 +201,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.tableWidget.resizeColumnsToContents()
 
     def filter_schedule(self):
+        """Filtre et affiche l'emploi du temps en fonction de la filière sélectionnée."""
         filiere_selectionnee = self.comboBoxFiliere.currentText()
         emploi_du_temps_df = lire_emploi_du_temps_csv('emploi_du_temps.csv')
         if emploi_du_temps_df is None:
@@ -202,8 +209,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
 
         if filiere_selectionnee != "Toutes":
             emploi_du_temps_df = emploi_du_temps_df[emploi_du_temps_df["Matière"].isin(
-                [matiere for filiere, matieres in filiere_matieres if filiere == filiere_selectionnee for matiere in
-                 matieres])]
+                [matiere for filiere, matieres in filiere_matieres if filiere == filiere_selectionnee for matiere in matieres])]
 
         start_time = self.date_debut.time()
         end_time = (datetime.datetime.combine(datetime.date.today(), start_time) +
@@ -247,8 +253,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
             col = date_to_col.get(date, None)
 
             if start_row is not None and end_row is not None and col is not None:
-                duration_minutes = (datetime.datetime.strptime(end_time, '%H:%M') - datetime.datetime.strptime(
-                    start_time, '%H:%M')).seconds // 60
+                duration_minutes = (datetime.datetime.strptime(end_time, '%H:%M') - datetime.datetime.strptime(start_time, '%H:%M')).seconds // 60
                 duration_intervals = duration_minutes // self.interval_minutes
 
                 for row in range(start_row, start_row + duration_intervals):
@@ -265,10 +270,9 @@ class ScheduleApp(QtWidgets.QMainWindow):
 
         self.tableWidget.resizeColumnsToContents()
 
-    def generate_individual_planning(self,prenom):
-
+    def generate_individual_planning(self, prenom):
+        """Génère et affiche l'emploi du temps individuel pour un étudiant donné."""
         etudiants_dict = lire_etudiants_csv("Etudiant.csv")
-
         if etudiants_dict is None:
             QtWidgets.QMessageBox.warning(self, "Erreur", "Impossible de lire le fichier Etudiant.csv")
             return
@@ -278,9 +282,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
             QtWidgets.QMessageBox.warning(self, "Erreur", f"Aucun étudiant trouvé avec le prénom '{prenom}'")
             return
 
-        # Filtrer les données de pré-assignation des salles pour l'étudiant sélectionné
         assignments_etudiant = self.preassigned_rooms_df[self.preassigned_rooms_df['Prenom'] == prenom]
-
         self.filter_scheduled(filiere_selectionnee=filiere)
 
         for _, row in assignments_etudiant.iterrows():
@@ -293,12 +295,11 @@ class ScheduleApp(QtWidgets.QMainWindow):
                     item = self.tableWidget.item(i, j)
                     if item and f"Session {session}" in item.text():
                         item.setText(f"{item.text()}\nSalle: {salle}\nPlace: {place}")
+
     def search_student(self):
+        """Recherche un étudiant par son prénom et affiche son emploi du temps."""
         prenom = self.lineEditPrenom.text()
-
-
         etudiants_dict = lire_etudiants_csv("Etudiant.csv")
-
         if etudiants_dict is None:
             QtWidgets.QMessageBox.warning(self, "Erreur", "Impossible de lire le fichier Etudiant.csv")
             return
@@ -308,9 +309,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
             QtWidgets.QMessageBox.warning(self, "Erreur", f"Aucun étudiant trouvé avec le prénom '{prenom}'")
             return
 
-        # Filtrer les données de pré-assignation des salles pour l'étudiant sélectionné
         assignments_etudiant = self.preassigned_rooms_df[self.preassigned_rooms_df['Prenom'] == prenom]
-
         self.filter_scheduled(filiere_selectionnee=filiere)
 
         for _, row in assignments_etudiant.iterrows():
@@ -323,9 +322,9 @@ class ScheduleApp(QtWidgets.QMainWindow):
                     item = self.tableWidget.item(i, j)
                     if item and f"Session {session}" in item.text():
                         item.setText(f"{item.text()}\nSalle: {salle}\nPlace: {place}")
-
 
     def show_details(self, row, column):
+        """Affiche les détails de l'emploi du temps lorsqu'une cellule est cliquée."""
         item = self.tableWidget.item(row, column)
         if item:
             text = item.text()
@@ -333,8 +332,8 @@ class ScheduleApp(QtWidgets.QMainWindow):
                 QtWidgets.QMessageBox.information(self, "Détails", text)
 
     def change_schedule(self):
+        """Met à jour l'emploi du temps lorsque la sélection change."""
         self.populate_schedule()
-
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)

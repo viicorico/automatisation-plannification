@@ -6,6 +6,12 @@ import datetime
 import pandas as pd
 
 def generer_graphe(filiere_matieres):
+    """
+    Génère un graphe où chaque nœud représente une matière et les arêtes représentent des matières en conflit (appartenant à la même filière).
+
+    :param filiere_matieres: Liste de tuples (filière, matières)
+    :return: Graphe NetworkX
+    """
     G = nx.Graph()
     for filiere, matieres in filiere_matieres:
         for matiere in matieres:
@@ -16,13 +22,25 @@ def generer_graphe(filiere_matieres):
                 G.add_edge(matieres[i], matieres[j])
     return G
 
-
 def solution_initiale(G):
+    """
+    Génère une solution initiale de coloration du graphe en utilisant l'algorithme greedy.
+
+    :param G: Graphe NetworkX
+    :return: Dictionnaire {matière: couleur}
+    """
     coloration = nx.coloring.greedy_color(G, strategy="largest_first")
     return coloration
 
-
 def calculer_effectif_par_session(solution, filiere_effectifs, filiere_matieres_dict):
+    """
+    Calcule le nombre d'étudiants par session.
+
+    :param solution: Dictionnaire {matière: session}
+    :param filiere_effectifs: Dictionnaire {filière: effectif}
+    :param filiere_matieres_dict: Dictionnaire {matière: filière}
+    :return: Dictionnaire {session: effectif}
+    """
     session_effectifs = {}
     for matiere, session in solution.items():
         filiere = filiere_matieres_dict[matiere]
@@ -32,8 +50,17 @@ def calculer_effectif_par_session(solution, filiere_effectifs, filiere_matieres_
         session_effectifs[session] += effectif
     return session_effectifs
 
-
 def est_solution_valide(solution, G, nb_places_par_session, filiere_effectifs, filiere_matieres_dict):
+    """
+    Vérifie si une solution est valide.
+
+    :param solution: Dictionnaire {matière: session}
+    :param G: Graphe NetworkX
+    :param nb_places_par_session: Nombre maximum de places par session
+    :param filiere_effectifs: Dictionnaire {filière: effectif}
+    :param filiere_matieres_dict: Dictionnaire {matière: filière}
+    :return: Booléen indiquant si la solution est valide
+    """
     session_effectifs = calculer_effectif_par_session(solution, filiere_effectifs, filiere_matieres_dict)
     for u, v in G.edges:
         if solution[u] == solution[v]:
@@ -43,10 +70,17 @@ def est_solution_valide(solution, G, nb_places_par_session, filiere_effectifs, f
             return False
     return True
 
-
 def ajuster_sessions(solution, nb_places_par_session, filiere_effectifs, filiere_matieres_dict):
-    session_effectifs = calculer_effectif_par_session(solution, filiere_effectifs, filiere_matieres_dict)
+    """
+    Ajuste les sessions pour qu'elles respectent les contraintes de capacité.
 
+    :param solution: Dictionnaire {matière: session}
+    :param nb_places_par_session: Nombre maximum de places par session
+    :param filiere_effectifs: Dictionnaire {filière: effectif}
+    :param filiere_matieres_dict: Dictionnaire {matière: filière}
+    :return: Dictionnaire ajusté {matière: session}
+    """
+    session_effectifs = calculer_effectif_par_session(solution, filiere_effectifs, filiere_matieres_dict)
     max_session = max(session_effectifs.keys(), default=-1) + 1
     for session, effectif in list(session_effectifs.items()):
         while effectif > nb_places_par_session:
@@ -60,11 +94,18 @@ def ajuster_sessions(solution, nb_places_par_session, filiere_effectifs, filiere
                         break
             session_effectifs[session] = effectif
             max_session += 1
-
     return solution
 
-
 def generer_voisinage(solution, nb_places_par_session, filiere_effectifs, filiere_matieres_dict):
+    """
+    Génère un voisinage en permutant deux matières de sessions différentes.
+
+    :param solution: Dictionnaire {matière: session}
+    :param nb_places_par_session: Nombre maximum de places par session
+    :param filiere_effectifs: Dictionnaire {filière: effectif}
+    :param filiere_matieres_dict: Dictionnaire {matière: filière}
+    :return: Liste de solutions voisines
+    """
     voisinage = []
     for _ in range(len(solution)):
         examen1, examen2 = random.sample(list(solution.keys()), 2)
@@ -74,24 +115,45 @@ def generer_voisinage(solution, nb_places_par_session, filiere_effectifs, filier
         voisinage.append(voisin)
     return voisinage
 
-
 def calculer_variance_examen(solution):
+    """
+    Calcule la variance du nombre d'examens par session.
+
+    :param solution: Dictionnaire {matière: session}
+    :return: Variance
+    """
     sessions = set(solution.values())
     effectifs = {session: list(solution.values()).count(session) for session in sessions}
     moyenne = sum(effectifs.values()) / len(sessions)
     variance = sum([(effectif - moyenne) ** 2 for effectif in effectifs.values()]) / len(sessions)
     return variance
 
-
 def hash_solution(solution):
+    """
+    Génère un hash SHA-256 pour une solution donnée.
+
+    :param solution: Dictionnaire {matière: session}
+    :return: Hash de la solution
+    """
     hash_object = hashlib.sha256(str(solution).encode())
     return hash_object.hexdigest()
 
-
 def algorithme_genetique(G, max_iterations, population_size, mutation_rate, nb_iterations, nb_places_par_session,
                          filiere_effectifs, filiere_matieres_dict):
-    meilleures_solutions = {}
+    """
+    Exécute l'algorithme génétique pour trouver une solution optimale.
 
+    :param G: Graphe NetworkX
+    :param max_iterations: Nombre maximum d'itérations sans amélioration
+    :param population_size: Taille de la population
+    :param mutation_rate: Taux de mutation
+    :param nb_iterations: Nombre d'itérations de l'algorithme
+    :param nb_places_par_session: Nombre maximum de places par session
+    :param filiere_effectifs: Dictionnaire {filière: effectif}
+    :param filiere_matieres_dict: Dictionnaire {matière: filière}
+    :return: Meilleure solution et sa variance
+    """
+    meilleures_solutions = {}
     for _ in range(nb_iterations):
         population = [
             ajuster_sessions(solution_initiale(G), nb_places_par_session, filiere_effectifs, filiere_matieres_dict) for
@@ -136,12 +198,25 @@ def algorithme_genetique(G, max_iterations, population_size, mutation_rate, nb_i
 
     return meilleure_solution_globale, meilleure_variance_globale
 
-
 def selectionner_parents(population):
+    """
+    Sélectionne les parents pour le croisement en utilisant une sélection aléatoire.
+
+    :param population: Liste de solutions
+    :return: Liste de parents sélectionnés
+    """
     return random.choices(population, k=len(population))
 
-
 def croiser_parents(population, nb_places_par_session, filiere_effectifs, filiere_matieres_dict):
+    """
+    Croise les parents pour générer de nouveaux enfants.
+
+    :param population: Liste de solutions
+    :param nb_places_par_session: Nombre maximum de places par session
+    :param filiere_effectifs: Dictionnaire {filière: effectif}
+    :param filiere_matieres_dict: Dictionnaire {matière: filière}
+    :return: Liste de nouvelles solutions enfants
+    """
     enfants = []
     for _ in range(len(population)):
         parent1, parent2 = random.sample(population, 2)
@@ -151,8 +226,17 @@ def croiser_parents(population, nb_places_par_session, filiere_effectifs, filier
         enfants.append(enfant)
     return enfants
 
-
 def muter_population(population, mutation_rate, nb_places_par_session, filiere_effectifs, filiere_matieres_dict):
+    """
+    Applique une mutation à la population en permutant deux matières aléatoirement.
+
+    :param population: Liste de solutions
+    :param mutation_rate: Taux de mutation
+    :param nb_places_par_session: Nombre maximum de places par session
+    :param filiere_effectifs: Dictionnaire {filière: effectif}
+    :param filiere_matieres_dict: Dictionnaire {matière: filière}
+    :return: Population mutée
+    """
     for solution in population:
         if random.random() < mutation_rate:
             examen1, examen2 = random.sample(list(solution.keys()), 2)
@@ -160,13 +244,24 @@ def muter_population(population, mutation_rate, nb_places_par_session, filiere_e
             solution = ajuster_sessions(solution, nb_places_par_session, filiere_effectifs, filiere_matieres_dict)
     return population
 
-
 def generer_horaires(solution, filiere_matieres_dict, durees_examens, debut,
                      amplitude_horaire, pause_midi, pause):
+    """
+    Génère les horaires des examens à partir de la solution fournie.
+
+    :param solution: Dictionnaire {matière: session}
+    :param filiere_matieres_dict: Dictionnaire {matière: filière}
+    :param durees_examens: Dictionnaire {matière: durée en minutes}
+    :param debut: Datetime de début des examens
+    :param amplitude_horaire: Amplitude horaire de la journée en heures
+    :param pause_midi: Durée de la pause déjeuner en timedelta
+    :param pause: Durée de la pause entre les examens en timedelta
+    :return: Dictionnaire {session: liste des horaires des examens}
+    """
     horaires = {}
     current_time = debut
     end_time = debut + datetime.timedelta(hours=amplitude_horaire)
-    solution_copy = solution.copy()  # Create a copy to avoid modifying the original
+    solution_copy = solution.copy()  # Crée une copie pour éviter de modifier l'original
 
     while solution_copy:
         session = min(solution_copy.values())
@@ -217,17 +312,25 @@ def generer_horaires(solution, filiere_matieres_dict, durees_examens, debut,
 
     return horaires
 
-
-
 def dessiner_graphe(G, solution):
+    """
+    Dessine le graphe des matières avec les sessions comme couleurs.
+
+    :param G: Graphe NetworkX
+    :param solution: Dictionnaire {matière: session}
+    """
     pos = nx.spring_layout(G)
     couleurs = [solution[noeud] if noeud in solution else 0 for noeud in G.nodes]
-    nx.draw(G, pos, with_labels=True, node_color=couleurs, cmap=plt.cm.tab20, node_size=1500)
+    nx.draw(G, pos, with_labels=True, node_color=couleurs, cmap=plt.get_cmap('tab20'), node_size=1500)
     plt.show()
 
-
 def afficher_emploi_du_temps_par_session(horaires):
-    # Créer une liste pour collecter les informations des examens
+    """
+    Affiche l'emploi du temps par session sous forme de DataFrame.
+
+    :param horaires: Dictionnaire {session: liste des horaires des examens}
+    :return: DataFrame de l'emploi du temps
+    """
     emploi_du_temps_data = []
 
     for session, exams in horaires.items():
@@ -240,19 +343,29 @@ def afficher_emploi_du_temps_par_session(horaires):
                 "Matière": matiere
             })
 
-    # Convertir la liste en DataFrame
     emploi_du_temps_df = pd.DataFrame(emploi_du_temps_data)
     return emploi_du_temps_df
 
 def afficher_emploi_du_temps_par_session_affichage(horaires):
+    """
+    Affiche l'emploi du temps par session sous forme lisible.
+
+    :param horaires: Dictionnaire {session: liste des horaires des examens}
+    """
     for session, exams in horaires.items():
         print(f"\nSession {session + 1}:")
         for date, debut, fin, matiere in exams:
             print(f"{date} {debut} - {fin}: {matiere}")
 
-
 def afficher_emploi_du_temps_etudiant_affichage(horaires, filiere, filiere_matieres_dict):
-    # Créer une liste pour collecter les informations des examens
+    """
+    Affiche l'emploi du temps d'un étudiant spécifique sous forme de DataFrame.
+
+    :param horaires: Dictionnaire {session: liste des horaires des examens}
+    :param filiere: Filière de l'étudiant
+    :param filiere_matieres_dict: Dictionnaire {matière: filière}
+    :return: DataFrame de l'emploi du temps de l'étudiant
+    """
     emploi_du_temps_data = []
 
     for session, exams in horaires.items():
@@ -266,18 +379,29 @@ def afficher_emploi_du_temps_etudiant_affichage(horaires, filiere, filiere_matie
                     "Matière": matiere
                 })
 
-    # Convertir la liste en DataFrame
     emploi_du_temps_df = pd.DataFrame(emploi_du_temps_data)
     return emploi_du_temps_df
+
 def afficher_emploi_du_temps_etudiant(horaires, filiere, filiere_matieres_dict):
+    """
+    Affiche l'emploi du temps d'un étudiant spécifique sous forme lisible.
+
+    :param horaires: Dictionnaire {session: liste des horaires des examens}
+    :param filiere: Filière de l'étudiant
+    :param filiere_matieres_dict: Dictionnaire {matière: filière}
+    """
     print(f"Emploi du temps pour la filière {filiere}:")
     for session, exams in horaires.items():
         for date, debut, fin, matiere in exams:
             if filiere_matieres_dict[matiere] == filiere:
                 print(f"{date} {debut} - {fin}: {matiere}")
 
-
 def get_filiere_etudiant(etudiants_dict, etudiant):
+    """
+    Récupère la filière d'un étudiant donné.
+
+    :param etudiants_dict: Dictionnaire {étudiant: filière}
+    :param etudiant: Nom de l'étudiant
+    :return: Filière de l'étudiant
+    """
     return etudiants_dict.get(etudiant, None)
-
-

@@ -3,6 +3,7 @@ from algo import generer_graphe, algorithme_genetique, generer_horaires, affiche
     afficher_emploi_du_temps_etudiant, get_filiere_etudiant, dessiner_graphe, calculer_effectif_par_session, \
     afficher_emploi_du_temps_par_session_affichage
 
+# Définition des matières par filière
 filiere_matieres = [
     ["Informatique", ["Informatique_Mathematiques", "Informatique_Algorithmique", "Informatique_BaseDeDonnees",
                       "Informatique_Reseaux"]],
@@ -19,9 +20,10 @@ filiere_matieres = [
     ["Economie", ["Economie_Microeconomie"]],
 ]
 
+# Création d'un dictionnaire des matières associées à chaque filière
 filiere_matieres_dict = {matiere: filiere for filiere, matieres in filiere_matieres for matiere in matieres}
 
-# nombre d'élèves par filière
+# Nombre d'élèves par filière
 filiere_effectifs = {
     "Informatique": 30,
     "Biologie": 25,
@@ -94,12 +96,14 @@ salles_capacites = {
 
 nb_places_par_session = sum(salles_capacites.values())
 
+# Générer le graphe des matières
 graphe = generer_graphe(filiere_matieres)
 max_iterations = 1000
 population_size = 50
 mutation_rate = 0.1
 nb_iterations = 100
 
+# Exécuter l'algorithme génétique pour trouver la meilleure solution
 meilleure_solution, variance = algorithme_genetique(graphe, max_iterations, population_size, mutation_rate,
                                                     nb_iterations, nb_places_par_session, filiere_effectifs,
                                                     filiere_matieres_dict)
@@ -109,7 +113,7 @@ horaires = generer_horaires(meilleure_solution, filiere_matieres_dict, durees_ex
                             amplitude_horaire=amplitude_horaire_journaliere, pause_midi=pause_dejeuner,
                             pause=pause_entre_examens)
 
-# Vérification et affichage des résultats
+# Afficher les résultats
 print("Coloration des noeuds :", meilleure_solution)
 afficher_emploi_du_temps_par_session_affichage(horaires)
 
@@ -118,10 +122,9 @@ session_effectifs = calculer_effectif_par_session(meilleure_solution, filiere_ef
 for session, effectif in session_effectifs.items():
     assert effectif <= nb_places_par_session, f"La session {session} dépasse le nombre de places autorisées."
 
-
 print("Variance de la solution :", variance)
 
-# Debug: Print session effectifs and variance details
+# Debug: Afficher les effectifs par session et les détails de la variance
 print("Effectifs par session:", session_effectifs)
 moyenne_effectifs = sum(session_effectifs.values()) / len(session_effectifs)
 print("Moyenne des effectifs par session:", moyenne_effectifs)

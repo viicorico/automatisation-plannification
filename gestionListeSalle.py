@@ -9,8 +9,8 @@ def lire_salles_et_capacites(fichier_csv_path):
 
     # Parcours de chaque ligne du tableau
     for i in range(len(fichier_csv)):
-        salle = fichier_csv.iloc[i, 0]  # La salle est dans la première colonne
-        capacite = fichier_csv.iloc[i, 1]  # La capacité est dans la deuxième colonne
+        salle = fichier_csv.iloc[i, 0]  # La salle est dans la première colonne de l'excel
+        capacite = fichier_csv.iloc[i, 1]  # La capacité est dans la deuxième colonne de l'excel
         salles_capacites[salle] = capacite
 
     return salles_capacites

@@ -3,7 +3,7 @@ from login import LoginWindow
 
 
 
-
+#Main permet l'ouverture de l'emploie du temps(Nous pouvons le faire avec login.py).
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -13,13 +13,13 @@ class MainWindow(QMainWindow):
         largeur = screen.width()
         hauteur = screen.height()
 
-        # Définir la taille de la fenêtre pour occuper toute la résolution de l'écran
+
         self.setGeometry(0, 0, largeur, hauteur)
 
-        # Pour s'assurer que la fenêtre est affichée en plein écran
+
         self.showMaximized()
 
-if __name__ == "__main__": # C'est le main github
+if __name__ == "__main__":
     app = QApplication([])
     #with open('stylesheet.qss', 'r') as file:
         #app.setStyleSheet(file.read())

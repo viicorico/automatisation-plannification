@@ -2,22 +2,28 @@ from algo import generer_graphe, algorithme_genetique, generer_horaires
 import datetime
 import os
 import pandas as pd
-from tabulate import tabulate
 import random
 
+# Fonction pour générer et afficher l'emploi du temps
 def generer_et_afficher_emploi_du_temps(filiere_matieres, filiere_effectifs, durees_examens, date_debut,
                                         amplitude_horaire_journaliere, pause_dejeuner, pause_entre_examens,
                                         salles_capacites, max_iterations=1000, population_size=50, mutation_rate=0.1,
                                         nb_iterations=100):
+    # Créer un dictionnaire de matières à partir des filières
     filiere_matieres_dict = {matiere: filiere for filiere, matieres in filiere_matieres for matiere in matieres}
+    # Calculer le nombre total de places disponibles par session
     nb_places_par_session = sum(salles_capacites.values())
+    # Générer le graphe des matières
     graphe = generer_graphe(filiere_matieres)
+    # Appliquer l'algorithme génétique pour trouver la meilleure solution
     meilleure_solution, variance = algorithme_genetique(graphe, max_iterations, population_size, mutation_rate,
                                                         nb_iterations, nb_places_par_session, filiere_effectifs,
                                                         filiere_matieres_dict)
+    # Générer les horaires à partir de la solution
     horaires = generer_horaires(meilleure_solution, filiere_matieres_dict, durees_examens, debut=date_debut,
                                 amplitude_horaire=amplitude_horaire_journaliere, pause_midi=pause_dejeuner,
                                 pause=pause_entre_examens)
+    # Afficher l'emploi du temps par session
     emploi_du_temps_df = afficher_emploi_du_temps_par_session(horaires)
 
     if not isinstance(emploi_du_temps_df, pd.DataFrame):
@@ -25,15 +31,18 @@ def generer_et_afficher_emploi_du_temps(filiere_matieres, filiere_effectifs, dur
 
     return emploi_du_temps_df
 
+# Fonction pour écrire l'emploi du temps dans un fichier CSV
 def ecrire_emploi_du_temps_csv(df, file_path):
     df.to_csv(file_path, index=False)
 
+# Fonction pour lire l'emploi du temps depuis un fichier CSV
 def lire_emploi_du_temps_csv(file_path):
     if os.path.exists(file_path):
         return pd.read_csv(file_path)
     else:
         return None
 
+# Fonction pour afficher l'emploi du temps par session
 def afficher_emploi_du_temps_par_session(horaires):
     emploi_du_temps_data = []
 
@@ -50,6 +59,7 @@ def afficher_emploi_du_temps_par_session(horaires):
     emploi_du_temps_df = pd.DataFrame(emploi_du_temps_data)
     return emploi_du_temps_df
 
+# Fonction pour générer des créneaux horaires
 def generate_time_slots(start_time, end_time, interval_minutes):
     slots = []
     current_time = start_time
@@ -59,35 +69,42 @@ def generate_time_slots(start_time, end_time, interval_minutes):
     slots.append(end_time.strftime('%H:%M'))
     return slots
 
+# Fonction pour générer une couleur aléatoire
 def generate_random_color(existing_colors):
     while True:
         color = "#{:06x}".format(random.randint(0, 0xFFFFFF))
         if color not in existing_colors:
             return color
 
+# Fonction pour lire les données des étudiants depuis un fichier CSV
 def lire_etudiants_csv(file_path):
     df = pd.read_csv(file_path, usecols=[0, 3], header=None, names=["Nom", "Filière"])
     etudiants_dict = {row["Nom"]: row["Filière"] for index, row in df.iterrows()}
     return etudiants_dict
 
+# Fonction pour lire les sessions et les matières depuis un fichier CSV
 def lire_sessions_et_matieres(fichier):
     df = pd.read_csv(fichier)
     return df[['Session', 'Matière']]
 
+# Fonction pour lire les étudiants depuis un fichier CSV
 def lire_etudiants(fichier):
     df = pd.read_csv(fichier)
     return df.iloc[:, [0, 3]]
 
+# Fonction pour lire les matières par filière depuis un fichier CSV
 def lire_matieres_par_filiere(fichier):
     df = pd.read_csv(fichier)
     filieres = df.columns[::2]
     matieres = {filiere: df[filiere].dropna().tolist() for filiere in filieres}
     return matieres
 
+# Fonction pour lire les salles et leurs capacités depuis un fichier CSV
 def lire_salles_et_capacites(fichier):
     df = pd.read_csv(fichier)
     return df
 
+# Fonction pour assigner les salles aux étudiants pour chaque matière et session
 def assigner_salles_aux_etudiants(etudiants_file, sessions_file, matieres_file, salles_file, nom_etudiant):
     etudiants = lire_etudiants(etudiants_file)
     sessions = lire_sessions_et_matieres(sessions_file)
@@ -143,20 +160,6 @@ def assigner_salles_aux_etudiants(etudiants_file, sessions_file, matieres_file, 
 
     return assignments_etudiant
 
+# Fonction pour filtrer les assignments par nom d'étudiant
 def filtrer_par_nom(df, nom):
     return df[df['Étudiant'] == nom]
-
-# Supposons que les fichiers CSV sont nommés en conséquence
-etudiants_file = 'Etudiant.csv'
-sessions_file = 'emploi_du_temps.csv'
-matieres_file = 'Matieres.csv'
-salles_file = 'listeSalle.csv'
-
-# Nom de l'étudiant à filtrer
-nom_etudiant = "BELHAJ Wael"
-
-# Attribuer les salles et les places aux étudiants pour chaque session et filtrer par nom d'étudiant
-assignments_etudiant = assigner_salles_aux_etudiants(etudiants_file, sessions_file, matieres_file, salles_file, nom_etudiant)
-
-# Afficher les affectations pour l'étudiant spécifié
-print(tabulate(assignments_etudiant, headers='keys', tablefmt='psql'))
