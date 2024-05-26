@@ -7,6 +7,7 @@ import sys
 import pandas as pd
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.uic import loadUi
+from tabulate import tabulate
 
 from algo import get_filiere_etudiant
 from gestionEtudiant import calculer_effectifs_par_filiere
