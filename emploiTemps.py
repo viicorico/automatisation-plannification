@@ -7,6 +7,7 @@ import sys
 import pandas as pd
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.uic import loadUi
+from tabulate import tabulate
 
 from algo import get_filiere_etudiant
 from gestionEtudiant import calculer_effectifs_par_filiere
@@ -264,8 +265,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
 
         self.tableWidget.resizeColumnsToContents()
 
-    def search_student(self):
-        prenom = self.lineEditPrenom.text()
+    def generate_individual_planning(self,prenom):
 
         etudiants_dict = lire_etudiants_csv("Etudiant.csv")
 
@@ -293,6 +293,37 @@ class ScheduleApp(QtWidgets.QMainWindow):
                     item = self.tableWidget.item(i, j)
                     if item and f"Session {session}" in item.text():
                         item.setText(f"{item.text()}\nSalle: {salle}\nPlace: {place}")
+    def search_student(self):
+        prenom = self.lineEditPrenom.text()
+
+
+        etudiants_dict = lire_etudiants_csv("Etudiant.csv")
+
+        if etudiants_dict is None:
+            QtWidgets.QMessageBox.warning(self, "Erreur", "Impossible de lire le fichier Etudiant.csv")
+            return
+
+        filiere = get_filiere_etudiant(etudiants_dict, prenom)
+        if not filiere:
+            QtWidgets.QMessageBox.warning(self, "Erreur", f"Aucun étudiant trouvé avec le prénom '{prenom}'")
+            return
+
+        # Filtrer les données de pré-assignation des salles pour l'étudiant sélectionné
+        assignments_etudiant = self.preassigned_rooms_df[self.preassigned_rooms_df['Prenom'] == prenom]
+
+        self.filter_scheduled(filiere_selectionnee=filiere)
+
+        for _, row in assignments_etudiant.iterrows():
+            session = row['Session']
+            salle = row['Salle']
+            place = row['Place']
+
+            for i in range(self.tableWidget.rowCount()):
+                for j in range(self.tableWidget.columnCount()):
+                    item = self.tableWidget.item(i, j)
+                    if item and f"Session {session}" in item.text():
+                        item.setText(f"{item.text()}\nSalle: {salle}\nPlace: {place}")
+
 
     def show_details(self, row, column):
         item = self.tableWidget.item(row, column)

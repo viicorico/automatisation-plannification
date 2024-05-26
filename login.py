@@ -41,8 +41,11 @@ class LoginWindow(QWidget):
         print(f"Tentative de connexion avec - Numéro: {numero}, Mot de passe: {motDePasse}")  # Debug print
         if (len(numero) == 6):
             if (self.authentifierEtudiant(numero, motDePasse) == True) :
-                self.planning_window = MainWindow()
-                self.planning_window.show()
+                index = self.listeNumeroEtudiant.index(numero)
+                prenom = self.listeNom[index]
+                self.emploiTemps_window = ScheduleApp()
+                self.emploiTemps_window.generate_individual_planning(prenom)  # Call the method to generate individual planning
+                self.emploiTemps_window.show()
                 self.close()
             else:
                 QMessageBox.warning(self, 'Erreur', 'Numéro étudiant ou mot de passe incorrect.')
