@@ -52,14 +52,29 @@ if emploi_du_temps_df is not None and isinstance(emploi_du_temps_df, pd.DataFram
 # Lire l'emploi du temps depuis le fichier CSV
 emploi_du_temps_lu_df = lire_emploi_du_temps_csv(file_path)
 
-# PyQt5 Schedule Display Application
+# Pré-assigner les salles à tous les étudiants et écrire dans un fichier CSV
+etudiants_df = pd.read_csv(fichier_csv_path, header=None)
+assignments_list = []
+
+for prenom in etudiants_df.iloc[:, 0].unique():
+    assignments_etudiant = assigner_salles_aux_etudiants(fichier_csv_path, file_path, fichier_csv_path_matieres,
+                                                         fichier_csv_path_salles, prenom)
+    assignments_etudiant['Prenom'] = prenom
+    assignments_list.append(assignments_etudiant)
+
+all_assignments_df = pd.concat(assignments_list, ignore_index=True)
+preassigned_rooms_file = 'Salle_Place.csv'
+all_assignments_df.to_csv(preassigned_rooms_file, index=False)
+
+# Application PyQt5 pour l'affichage de l'emploi du temps
 etudiants_file = 'Etudiant.csv'
 sessions_file = 'emploi_du_temps.csv'
 matieres_file = 'Matieres.csv'
 salles_file = 'listeSalle.csv'
 
-# Set locale to French for day names
+# Configurer la locale en français pour les noms de jours
 locale.setlocale(locale.LC_TIME, 'fr_FR.UTF-8')
+
 
 class ScheduleApp(QtWidgets.QMainWindow):
     def __init__(self):
@@ -75,6 +90,9 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.filter_schedule()
         self.populate_completer()
         self.tableWidget.cellClicked.connect(self.show_details)
+
+        # Charger les données de pré-assignation des salles
+        self.preassigned_rooms_df = pd.read_csv(preassigned_rooms_file)
 
     def populate_filiere_combobox(self):
         self.comboBoxFiliere.addItem("Toutes")
@@ -113,7 +131,8 @@ class ScheduleApp(QtWidgets.QMainWindow):
 
         if filiere_selectionnee != "Toutes":
             emploi_du_temps_df = emploi_du_temps_df[emploi_du_temps_df["Matière"].isin(
-                [matiere for filiere, matieres in filiere_matieres if filiere == filiere_selectionnee for matiere in matieres])]
+                [matiere for filiere, matieres in filiere_matieres if filiere == filiere_selectionnee for matiere in
+                 matieres])]
 
         start_time = self.date_debut.time()
         end_time = (datetime.datetime.combine(datetime.date.today(), start_time) +
@@ -157,7 +176,8 @@ class ScheduleApp(QtWidgets.QMainWindow):
             col = date_to_col.get(date, None)
 
             if start_row is not None and end_row is not None and col is not None:
-                duration_minutes = (datetime.datetime.strptime(end_time, '%H:%M') - datetime.datetime.strptime(start_time, '%H:%M')).seconds // 60
+                duration_minutes = (datetime.datetime.strptime(end_time, '%H:%M') - datetime.datetime.strptime(
+                    start_time, '%H:%M')).seconds // 60
                 duration_intervals = duration_minutes // self.interval_minutes
 
                 for row in range(start_row, start_row + duration_intervals):
@@ -182,7 +202,8 @@ class ScheduleApp(QtWidgets.QMainWindow):
 
         if filiere_selectionnee != "Toutes":
             emploi_du_temps_df = emploi_du_temps_df[emploi_du_temps_df["Matière"].isin(
-                [matiere for filiere, matieres in filiere_matieres if filiere == filiere_selectionnee for matiere in matieres])]
+                [matiere for filiere, matieres in filiere_matieres if filiere == filiere_selectionnee for matiere in
+                 matieres])]
 
         start_time = self.date_debut.time()
         end_time = (datetime.datetime.combine(datetime.date.today(), start_time) +
@@ -226,7 +247,8 @@ class ScheduleApp(QtWidgets.QMainWindow):
             col = date_to_col.get(date, None)
 
             if start_row is not None and end_row is not None and col is not None:
-                duration_minutes = (datetime.datetime.strptime(end_time, '%H:%M') - datetime.datetime.strptime(start_time, '%H:%M')).seconds // 60
+                duration_minutes = (datetime.datetime.strptime(end_time, '%H:%M') - datetime.datetime.strptime(
+                    start_time, '%H:%M')).seconds // 60
                 duration_intervals = duration_minutes // self.interval_minutes
 
                 for row in range(start_row, start_row + duration_intervals):
@@ -257,7 +279,8 @@ class ScheduleApp(QtWidgets.QMainWindow):
             QtWidgets.QMessageBox.warning(self, "Erreur", f"Aucun étudiant trouvé avec le prénom '{prenom}'")
             return
 
-        assignments_etudiant = assigner_salles_aux_etudiants(etudiants_file, sessions_file, matieres_file, salles_file, prenom)
+        # Filtrer les données de pré-assignation des salles pour l'étudiant sélectionné
+        assignments_etudiant = self.preassigned_rooms_df[self.preassigned_rooms_df['Prenom'] == prenom]
 
         self.filter_scheduled(filiere_selectionnee=filiere)
 
@@ -281,6 +304,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
 
     def change_schedule(self):
         self.populate_schedule()
+
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
