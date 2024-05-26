@@ -3,7 +3,7 @@ from PyQt5.QtWidgets import QWidget, QApplication, QMessageBox, QLineEdit
 from PyQt5.uic import loadUi
 from emploiTemps import ScheduleApp
 
-from planning import MainWindow
+
 
 
 class LoginWindow(QWidget):
