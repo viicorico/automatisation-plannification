@@ -31,7 +31,7 @@ durees_examens = extraire_matieres_et_durees(fichier_csv_path_matieres)
 filiere_matieres = extraire_filieres_et_matieres(fichier_csv_path_matieres)
 
 # Paramètres de l'emploi du temps
-date_debut = datetime.datetime(2024, 5, 22, 8, 0)
+date_debut = datetime.datetime(2024, 5, 23, 8, 0)
 amplitude_horaire_journaliere = 10
 pause_dejeuner = datetime.timedelta(hours=1)
 pause_entre_examens = datetime.timedelta(minutes=20)

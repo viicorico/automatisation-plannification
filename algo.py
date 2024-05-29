@@ -244,6 +244,8 @@ def muter_population(population, mutation_rate, nb_places_par_session, filiere_e
             solution = ajuster_sessions(solution, nb_places_par_session, filiere_effectifs, filiere_matieres_dict)
     return population
 
+import datetime
+
 def generer_horaires(solution, filiere_matieres_dict, durees_examens, debut,
                      amplitude_horaire, pause_midi, pause):
     """
@@ -307,7 +309,10 @@ def generer_horaires(solution, filiere_matieres_dict, durees_examens, debut,
         max_exam_duration = max(durees_examens[matiere] for _, _, matiere in exam_times)
         # Vérifie si l'amplitude horaire est dépassée pour le jour courant en ajoutant la durée maximale des examens
         if current_time + datetime.timedelta(minutes=max_exam_duration) >= end_time:
-            current_time = current_time.replace(hour=debut.hour, minute=debut.minute) + datetime.timedelta(days=1)
+            if current_time.weekday() == 4:  # Si c'est vendredi
+                current_time = current_time.replace(hour=debut.hour, minute=debut.minute) + datetime.timedelta(days=3)
+            else:
+                current_time = current_time.replace(hour=debut.hour, minute=debut.minute) + datetime.timedelta(days=1)
             end_time = current_time + datetime.timedelta(hours=amplitude_horaire)
 
     return horaires
