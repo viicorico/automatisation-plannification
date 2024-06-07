@@ -1,6 +1,5 @@
 import datetime
-from algo import generer_graphe, algorithme_genetique, generer_horaires, afficher_emploi_du_temps_par_session, \
-    afficher_emploi_du_temps_etudiant, get_filiere_etudiant, dessiner_graphe, calculer_effectif_par_session, \
+from py.algo import generer_graphe, algorithme_genetique, generer_horaires, afficher_emploi_du_temps_etudiant, get_filiere_etudiant, dessiner_graphe, calculer_effectif_par_session, \
     afficher_emploi_du_temps_par_session_affichage
 
 # Définition des matières par filière

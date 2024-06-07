@@ -2,7 +2,7 @@ import pandas as pd
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QWidget, QApplication, QMessageBox, QLineEdit
 from PyQt5.uic import loadUi
-from emploiTemps import ScheduleApp
+from py.emploiTemps import ScheduleApp
 
 
 
@@ -11,7 +11,7 @@ class LoginWindow(QWidget):
     def __init__(self):
         super().__init__()
         loadUi('login.ui', self)
-        self.setWindowIcon(QIcon('logo.ico'))
+        self.setWindowIcon(QIcon('../img/logo.ico'))
         self.loginButton.clicked.connect(self.handle_login)
         self.listeNumeroEtudiant = []
         self.listeNom = []

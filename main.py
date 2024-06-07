@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import QApplication, QMainWindow
-from login import LoginWindow
+from py.login import LoginWindow
 
 
 

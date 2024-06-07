@@ -1,6 +1,6 @@
-from gestionEtudiant import calculer_effectifs_par_filiere
-from gestionListeSalle import lire_salles_et_capacites
-from gestionMatiere import extraire_filieres_et_matieres, extraire_matieres_et_durees
+from py.gestionEtudiant import calculer_effectifs_par_filiere
+from py.gestionListeSalle import lire_salles_et_capacites
+from py.gestionMatiere import extraire_filieres_et_matieres, extraire_matieres_et_durees
 
 # Extraction des filières et des matières depuis le fichier CSV
 fichier_csv_path = 'Matieres.csv'

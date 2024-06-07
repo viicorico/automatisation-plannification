@@ -7,7 +7,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtGui import QIcon
 from PyQt5.uic import loadUi
 
-from algo import get_filiere_etudiant
+from py.algo import get_filiere_etudiant
 from gestionEtudiant import calculer_effectifs_par_filiere
 from gestionListeSalle import lire_salles_et_capacites
 from gestionMatiere import extraire_matieres_et_durees, extraire_filieres_et_matieres
@@ -62,7 +62,7 @@ for prenom in etudiants_df.iloc[:, 0].unique():
     assignments_list.append(assignments_etudiant)
 
 all_assignments_df = pd.concat(assignments_list, ignore_index=True)
-preassigned_rooms_file = 'Salle_Place.csv'
+preassigned_rooms_file = '../csv/Salle_Place.csv'
 all_assignments_df.to_csv(preassigned_rooms_file, index=False)
 
 
@@ -79,7 +79,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
         """Initialise la fenêtre principale de l'application."""
         super().__init__()
         loadUi("EDT1.ui", self)
-        self.setWindowIcon(QIcon('logo.ico'))
+        self.setWindowIcon(QIcon('../img/logo.ico'))
         self.date_debut = datetime.datetime(2024, 5, 22, 8, 0)
         self.amplitude_horaire_journaliere = 10
         self.interval_minutes = 5

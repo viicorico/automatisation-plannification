@@ -1,5 +1,5 @@
 # Supposons que les fichiers CSV sont nommés en conséquence
-from gestionEmploieTemps import assigner_salles_aux_etudiants
+from py.gestionEmploieTemps import assigner_salles_aux_etudiants
 from tabulate import tabulate
 etudiants_file = 'Etudiant.csv'
 sessions_file = 'emploi_du_temps.csv'

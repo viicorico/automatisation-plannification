@@ -1,4 +1,4 @@
-from algo import generer_graphe, algorithme_genetique, generer_horaires
+from py.algo import generer_graphe, algorithme_genetique, generer_horaires
 import datetime
 import os
 import pandas as pd
