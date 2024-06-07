@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import QApplication, QMainWindow
-from login import LoginWindow
+from py.login import LoginWindow
 
 
 
@@ -13,16 +13,15 @@ class MainWindow(QMainWindow):
         largeur = screen.width()
         hauteur = screen.height()
 
-        # Définir la taille de la fenêtre pour occuper toute la résolution de l'écran
+        # définir la taille de la fenêtre pour occuper toute la résolution de l'écran
         self.setGeometry(0, 0, largeur, hauteur)
 
-        # Pour s'assurer que la fenêtre est affichée en plein écran
+        # afin de s'assurer que la fenêtre est affichée en plein écran
         self.showMaximized()
 
 if __name__ == "__main__": # C'est le main github
     app = QApplication([])
-    #with open('stylesheet.qss', 'r') as file:
-        #app.setStyleSheet(file.read())
+
     main_window = MainWindow()
     main_window.show()
     app.exec_()
