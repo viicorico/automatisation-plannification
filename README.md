@@ -7,6 +7,6 @@ L'objectif principal est d'attribuer des horaires et des salles d'examen de mani
 
 ## Algorithmes utilisés
 ### Coloration des graphes
-  *Description : La coloration de graphes attribue des couleurs à chaque sommet d'un graphe tel que deux sommets adjacents n'ont pas la même couleur.
-  *Avantages : Offre une méthodologie structurée pour organiser les tâches, ressources et contraintes temporelles.
-  *Inconvénients : Le problème est NP-complet, rendant difficile la recherche d'une solution optimale en temps polynomial.
+* Description : La coloration de graphes attribue des couleurs à chaque sommet d'un graphe tel que deux sommets adjacents n'ont pas la même couleur.
+* Avantages : Offre une méthodologie structurée pour organiser les tâches, ressources et contraintes temporelles.
+* Inconvénients : Le problème est NP-complet, rendant difficile la recherche d'une solution optimale en temps polynomial.
