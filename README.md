@@ -38,8 +38,7 @@ Pour lancer l'application, suivez les étapes ci-dessous :
 1. Prérequis : Assurez-vous d'avoir Python et PyQt5 installés sur votre machine.
 
 2. Exécution de l'application :
-
-Le fichier main.py contient le point d'entrée de l'application. Il initialise l'interface utilisateur développée avec PyQt5, exécute les algorithmes, et lance le processus de planification des examens. Une fois exécutée, l'application génère et affiche le planning optimal pour tous (ou/et l'étudiant) en fonction des contraintes et des données fournies.
+   Le fichier main.py contient le point d'entrée de l'application. Il initialise l'interface utilisateur développée avec PyQt5, exécute les algorithmes, et lance le processus de planification des examens. Une        fois exécutée, l'application génère et affiche le planning optimal pour tous (ou/et l'étudiant) en fonction des contraintes et des données fournies.
 
 3. La connexion se fait avec le numéro étudiant de l'élève ainsi que son mot de passe qui se trouve dans le tableau csv/Etudiants.csv
    La connexion avec le compte administrateur suit le même principe que la connexion au compte étudiant, les informations se situant dans le tableau csv/Administrateur.csv.
